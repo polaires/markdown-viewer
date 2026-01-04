@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, DragEvent } from 'react';
 import MarkdownViewer from '@/components/MarkdownViewer';
 
 const SAMPLE_MARKDOWN = `# Comprehensive Gap Analysis: Lanthanide Bioseparation Kinetic Control Framework
@@ -88,16 +88,94 @@ This is the most important new finding from Aramini 1996:
 export default function Home() {
   const [markdown, setMarkdown] = useState(SAMPLE_MARKDOWN);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+
+  const handleFile = useCallback((file: File) => {
+    if (file.type === 'text/markdown' || file.name.endsWith('.md') || file.type === 'text/plain') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        setMarkdown(content);
+        setFileName(file.name);
+        setIsEditing(false);
+      };
+      reader.readAsText(file);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFile(files[0]);
+    }
+  }, [handleFile]);
+
+  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleFile(files[0]);
+    }
+  }, [handleFile]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className="min-h-screen bg-background"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-500/20 backdrop-blur-sm">
+          <div className="rounded-2xl border-4 border-dashed border-blue-500 bg-white/90 px-16 py-12 text-center dark:bg-gray-900/90">
+            <svg className="mx-auto h-16 w-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <p className="mt-4 text-xl font-semibold text-blue-600 dark:text-blue-400">Drop your markdown file here</p>
+            <p className="mt-2 text-sm text-gray-500">.md or .txt files supported</p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-950/80">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-semibold text-foreground">
-            Markdown Viewer
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold text-foreground">
+              Markdown Viewer
+            </h1>
+            {fileName && (
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                {fileName}
+              </span>
+            )}
+          </div>
           <div className="flex gap-2">
+            <label className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800">
+              Open File
+              <input
+                type="file"
+                accept=".md,.markdown,.txt"
+                onChange={handleFileInput}
+                className="hidden"
+              />
+            </label>
             <button
               onClick={() => setIsEditing(!isEditing)}
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
@@ -105,13 +183,13 @@ export default function Home() {
               {isEditing ? 'Preview' : 'Edit'}
             </button>
             <button
-              onClick={() => setMarkdown('')}
+              onClick={() => { setMarkdown(''); setFileName(null); }}
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
             >
               Clear
             </button>
             <button
-              onClick={() => setMarkdown(SAMPLE_MARKDOWN)}
+              onClick={() => { setMarkdown(SAMPLE_MARKDOWN); setFileName(null); }}
               className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:opacity-90"
             >
               Load Sample
@@ -141,8 +219,11 @@ export default function Home() {
               <MarkdownViewer content={markdown} />
             ) : (
               <div className="py-20 text-center text-gray-500">
-                <p className="text-lg">No markdown content</p>
-                <p className="mt-2 text-sm">Click &quot;Edit&quot; to paste your markdown or &quot;Load Sample&quot; to see an example</p>
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p className="mt-4 text-lg">No markdown content</p>
+                <p className="mt-2 text-sm">Drag & drop a .md file, click &quot;Open File&quot;, or &quot;Load Sample&quot;</p>
               </div>
             )}
           </div>

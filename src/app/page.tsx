@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import MarkdownViewer from '@/components/MarkdownViewer';
+import MDEditor from '@uiw/react-md-editor';
 
 const SAMPLE_MARKDOWN = `# Comprehensive Gap Analysis: Lanthanide Bioseparation Kinetic Control Framework
 ## Updated January 2026 — Now Including 24 Literature Extractions
@@ -86,8 +86,7 @@ This is the most important new finding from Aramini 1996:
 `;
 
 export default function Home() {
-  const [markdown, setMarkdown] = useState(SAMPLE_MARKDOWN);
-  const [isEditing, setIsEditing] = useState(false);
+  const [markdown, setMarkdown] = useState<string | undefined>(SAMPLE_MARKDOWN);
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const dragCounterRef = useRef(0);
@@ -99,7 +98,6 @@ export default function Home() {
         const content = e.target?.result as string;
         setMarkdown(content);
         setFileName(file.name);
-        setIsEditing(false);
       };
       reader.readAsText(file);
     }
@@ -122,7 +120,7 @@ export default function Home() {
   }, [fileName]);
 
   const handleSave = useCallback(() => {
-    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const blob = new Blob([markdown || ''], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -222,12 +220,6 @@ export default function Home() {
               />
             </label>
             <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
-            >
-              {isEditing ? 'Preview' : 'Edit'}
-            </button>
-            <button
               onClick={handleSave}
               disabled={!markdown}
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
@@ -235,10 +227,10 @@ export default function Home() {
               Save
             </button>
             <button
-              onClick={() => { setMarkdown(''); setFileName(null); }}
+              onClick={() => { setMarkdown('# New Document\n\nStart typing here...'); setFileName(null); }}
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
             >
-              Clear
+              New
             </button>
             <button
               onClick={() => { setMarkdown(SAMPLE_MARKDOWN); setFileName(null); }}
@@ -251,35 +243,18 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        {isEditing ? (
-          <div className="flex flex-col gap-4">
-            <label htmlFor="markdown-input" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Paste your markdown below:
-            </label>
-            <textarea
-              id="markdown-input"
-              value={markdown}
-              onChange={(e) => setMarkdown(e.target.value)}
-              className="h-[70vh] w-full resize-none rounded-lg border border-gray-300 bg-white p-4 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-900"
-              placeholder="# Enter your markdown here..."
-            />
-          </div>
-        ) : (
-          <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            {markdown ? (
-              <MarkdownViewer content={markdown} />
-            ) : (
-              <div className="py-20 text-center text-gray-500">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <p className="mt-4 text-lg">No markdown content</p>
-                <p className="mt-2 text-sm">Drag & drop a .md file, click &quot;Open File&quot;, or &quot;Load Sample&quot;</p>
-              </div>
-            )}
-          </div>
-        )}
+      <main className="mx-auto max-w-5xl px-4 py-8" data-color-mode="light">
+        <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <MDEditor
+            value={markdown}
+            onChange={setMarkdown}
+            preview="preview"
+            hideToolbar={true}
+            height={600}
+            visibleDragbar={false}
+            className="!border-0 !bg-transparent"
+          />
+        </div>
       </main>
 
       {/* Footer */}

@@ -87,6 +87,7 @@ This is the most important new finding from Aramini 1996:
 
 export default function Home() {
   const [markdown, setMarkdown] = useState<string | undefined>(SAMPLE_MARKDOWN);
+  const [isEditing, setIsEditing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const dragCounterRef = useRef(0);
@@ -220,6 +221,12 @@ export default function Home() {
               />
             </label>
             <button
+              onClick={() => setIsEditing(!isEditing)}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
+            >
+              {isEditing ? 'Preview' : 'Edit'}
+            </button>
+            <button
               onClick={handleSave}
               disabled={!markdown}
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
@@ -244,17 +251,23 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="mx-auto max-w-5xl px-4 py-8" data-color-mode="light">
-        <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <MDEditor
-            value={markdown}
-            onChange={setMarkdown}
-            preview="preview"
-            hideToolbar={true}
-            height={600}
-            visibleDragbar={false}
-            className="!border-0 !bg-transparent"
-          />
-        </div>
+        {isEditing ? (
+          <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <MDEditor
+              value={markdown}
+              onChange={setMarkdown}
+              preview="preview"
+              hideToolbar={true}
+              height={600}
+              visibleDragbar={false}
+              className="!border-0 !bg-transparent"
+            />
+          </div>
+        ) : (
+          <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <MDEditor.Markdown source={markdown} className="prose prose-lg max-w-none dark:prose-invert" />
+          </div>
+        )}
       </main>
 
       {/* Footer */}

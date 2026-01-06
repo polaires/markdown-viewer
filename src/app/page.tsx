@@ -112,6 +112,27 @@ export default function Home() {
     }
   }, [handleFile]);
 
+  // Update browser tab title based on filename
+  useEffect(() => {
+    if (fileName) {
+      document.title = `${fileName} - Markdown Viewer`;
+    } else {
+      document.title = 'Markdown Viewer';
+    }
+  }, [fileName]);
+
+  const handleSave = useCallback(() => {
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName || 'document.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [markdown, fileName]);
+
   // Use document-level event listeners for reliable drag and drop
   useEffect(() => {
     const handleDragEnter = (e: DragEvent) => {
@@ -205,6 +226,13 @@ export default function Home() {
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
             >
               {isEditing ? 'Preview' : 'Edit'}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!markdown}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
+            >
+              Save
             </button>
             <button
               onClick={() => { setMarkdown(''); setFileName(null); }}

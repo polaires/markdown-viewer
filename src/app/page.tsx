@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import MDEditor from '@uiw/react-md-editor';
+import MarkdownViewer from '@/components/MarkdownViewer';
 
 const SAMPLE_MARKDOWN = `# Comprehensive Gap Analysis: Lanthanide Bioseparation Kinetic Control Framework
 ## Updated January 2026 — Now Including 24 Literature Extractions
@@ -86,7 +86,7 @@ This is the most important new finding from Aramini 1996:
 `;
 
 export default function Home() {
-  const [markdown, setMarkdown] = useState<string | undefined>(SAMPLE_MARKDOWN);
+  const [markdown, setMarkdown] = useState(SAMPLE_MARKDOWN);
   const [isEditing, setIsEditing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -121,7 +121,7 @@ export default function Home() {
   }, [fileName]);
 
   const handleSave = useCallback(() => {
-    const blob = new Blob([markdown || ''], { type: 'text/markdown' });
+    const blob = new Blob([markdown], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -234,10 +234,10 @@ export default function Home() {
               Save
             </button>
             <button
-              onClick={() => { setMarkdown('# New Document\n\nStart typing here...'); setFileName(null); }}
+              onClick={() => { setMarkdown(''); setFileName(null); }}
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800"
             >
-              New
+              Clear
             </button>
             <button
               onClick={() => { setMarkdown(SAMPLE_MARKDOWN); setFileName(null); }}
@@ -250,22 +250,24 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-5xl px-4 py-8" data-color-mode="light">
+      <main className="mx-auto max-w-5xl px-4 py-8">
         {isEditing ? (
-          <div className="rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <MDEditor
-              value={markdown}
-              onChange={setMarkdown}
-              preview="preview"
-              hideToolbar={true}
-              height={600}
-              visibleDragbar={false}
-              className="!border-0 !bg-transparent"
-            />
-          </div>
+          <textarea
+            value={markdown}
+            onChange={(e) => setMarkdown(e.target.value)}
+            className="min-h-[70vh] w-full resize-none rounded-lg border border-gray-200 bg-white p-8 font-mono text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-800 dark:bg-gray-900"
+            placeholder="# Enter your markdown here..."
+          />
         ) : (
           <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <MDEditor.Markdown source={markdown} className="prose prose-lg max-w-none dark:prose-invert" />
+            {markdown ? (
+              <MarkdownViewer content={markdown} />
+            ) : (
+              <div className="py-20 text-center text-gray-500">
+                <p className="text-lg">No markdown content</p>
+                <p className="mt-2 text-sm">Drag & drop a .md file, click &quot;Open File&quot;, or &quot;Load Sample&quot;</p>
+              </div>
+            )}
           </div>
         )}
       </main>
